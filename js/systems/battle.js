@@ -53,9 +53,25 @@
     subEl.classList.add('hidden');
     menuEl.innerHTML = ACTIONS.map((a, i) => {
       const labels = { attack: '싸운다', skill: '기술', item: '아이템', run: '도망친다' };
-      return `<div class="battle-btn${i === menuIndex ? ' selected' : ''}">${labels[a]}</div>`;
+      return `<div class="battle-btn${i === menuIndex ? ' selected' : ''}" data-index="${i}">${labels[a]}</div>`;
     }).join('');
   }
+
+  function runMenuAction(index) {
+    menuIndex = index;
+    pushMenu();
+    const action = ACTIONS[menuIndex];
+    if (action === 'attack') doAttack();
+    else if (action === 'skill') openSkillMenu();
+    else if (action === 'item') openItemMenu();
+    else if (action === 'run') doRun();
+  }
+
+  menuEl.addEventListener('click', (e) => {
+    const row = e.target.closest('.battle-btn');
+    if (!row || phase !== 'menu') return;
+    runMenuAction(Number(row.dataset.index));
+  });
 
   function renderSub() {
     subEl.classList.remove('hidden');
@@ -64,10 +80,18 @@
       subEl.innerHTML = '<div class="sub-row">없음 (Esc로 취소)</div>';
       return;
     }
-    subEl.innerHTML = subItems.map((it, i) => `<div class="sub-row${i === subIndex ? ' selected' : ''}">${it.label}</div>`).join('');
+    subEl.innerHTML = subItems.map((it, i) => `<div class="sub-row${i === subIndex ? ' selected' : ''}" data-index="${i}">${it.label}</div>`).join('');
     const selected = subEl.querySelector('.sub-row.selected');
     if (selected) selected.scrollIntoView({ block: 'nearest' });
   }
+
+  subEl.addEventListener('click', (e) => {
+    const row = e.target.closest('.sub-row');
+    if (!row || phase !== 'submenu' || !subItems.length) return;
+    subIndex = Number(row.dataset.index);
+    renderSub();
+    subItems[subIndex].run();
+  });
 
   function start(gameState, enc, onEnd) {
     state = gameState;

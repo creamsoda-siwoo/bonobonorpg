@@ -24,9 +24,29 @@
     listEl.innerHTML = slots.map((s, i) => {
       const def = window.BONO_ITEMS[s.itemId];
       const cls = 'item-row' + (i === selected ? ' selected' : '');
-      return `<div class="${cls}"><span><span class="item-name">${def.name}</span> x${s.qty}<br><span class="item-desc">${def.desc}</span></span></div>`;
+      return `<div class="${cls}" data-index="${i}"><span><span class="item-name">${def.name}</span> x${s.qty}<br><span class="item-desc">${def.desc}</span></span></div>`;
     }).join('');
   }
+
+  function useSelected() {
+    const slots = itemsWithQty();
+    if (!slots.length) return;
+    const slot = slots[selected];
+    const def = window.BONO_ITEMS[slot.itemId];
+    if (def.usable && !def.keyItem) {
+      const msg = def.use(player);
+      player.removeItem(slot.itemId, 1);
+      msgEl.textContent = msg;
+      render();
+    }
+  }
+
+  listEl.addEventListener('click', (e) => {
+    const row = e.target.closest('.item-row');
+    if (!row || !active || !row.dataset.index) return;
+    selected = Number(row.dataset.index);
+    useSelected();
+  });
 
   function open(playerRef) {
     player = playerRef;
@@ -50,16 +70,7 @@
     if (input.isPressed('down') && slots.length) { selected = (selected + 1) % slots.length; render(); }
     if (input.isPressed('up') && slots.length) { selected = (selected - 1 + slots.length) % slots.length; render(); }
     if (input.isPressed('cancel')) { close(); return; }
-    if (input.isPressed('confirm') && slots.length) {
-      const slot = slots[selected];
-      const def = window.BONO_ITEMS[slot.itemId];
-      if (def.usable && !def.keyItem) {
-        const msg = def.use(player);
-        player.removeItem(slot.itemId, 1);
-        msgEl.textContent = msg;
-        render();
-      }
-    }
+    if (input.isPressed('confirm') && slots.length) useSelected();
   }
 
   window.BONO_INVENTORY = { open, close, isActive, handleInput };
